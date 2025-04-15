@@ -63,65 +63,79 @@ def main_menu():
     st.title("Leads and Logic App")
     st.subheader("Classify websites into industries")
     
+    # Instructions
+    st.markdown("""
+    ### How to use this app:
+    1. Select an LLM provider and enter your API key below
+    2. You have three options to define industries:
+       - Use our default industry list
+       - Have the AI suggest industries based on your business description
+       - Upload your own custom industries list
+    3. After confirming industries, you'll enter websites to classify
+    4. The app will analyze and categorize each website
+    """)
+    
     # LLM Provider selection
-    providers = ["OpenAI", "Anthropic", "Google", "Mistral", "Llama"]
+    st.markdown("### Step 1: Set up your AI provider")
+    providers = ["OpenAI", "Anthropic"]
     st.session_state.llm_provider = st.selectbox("Select LLM Provider", providers)
     
     # API Key input
-    api_key = st.text_input("Enter your API key", type="password")
+    api_key = st.text_input("Enter your API key", type="password", 
+                          help="Your API key will not be stored and is only used for this session")
     if api_key:
         st.session_state.api_key = api_key
     
+    st.markdown("### Step 2: Define industries for classification")
+    
+    # Default industries button
+    if st.button("Proceed with default industries"):
+        st.session_state.industries = [
+            "Technology & Software", 
+            "E-commerce & Retail", 
+            "Finance & FinTech",
+            "Healthcare & Life Sciences", 
+            "Education & Training", 
+            "Marketing & Advertising",
+            "Consulting & Professional", 
+            "Services", 
+            "Media & Content", 
+            "Real Estate",
+            "Travel, Hospitality & Events", 
+            "Manufacturing & Industrial", 
+            "Non-Profit & Government",
+            "Other / Miscellaneous"
+        ]
+        st.session_state.page = "industry_confirmation"
+        st.rerun()
+    
     # Business description input
-    st.markdown("### Business Description")
+    st.markdown("### Or describe your business for AI-suggested industries")
     business_description = st.text_area(
         "Describe the business you're classifying for",
         help="Detail the products or services rendered, example of past or current customers, " +
         "business goals, capacity and resources, and any other relevant information."
     )
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Default industries button
-        if st.button("Proceed with default industries"):
-            st.session_state.industries = [
-                "Technology & Software", 
-                "E-commerce & Retail", 
-                "Finance & FinTech",
-                "Healthcare & Life Sciences", 
-                "Education & Training", 
-                "Marketing & Advertising",
-                "Consulting & Professional", 
-                "Services", 
-                "Media & Content", 
-                "Real Estate",
-                "Travel, Hospitality & Events", 
-                "Manufacturing & Industrial", 
-                "Non-Profit & Government",
-                "Other / Miscellaneous"
-            ]
-            st.session_state.page = "industry_confirmation"
-            st.rerun()
-    
-    with col2:
-        # Infer industries button
-        if business_description and st.button("Proceed with inferred industries"):
-            if not st.session_state.api_key:
-                st.error("API key is required to infer industries.")
-            else:
-                with st.spinner("Inferring industries based on your description..."):
-                    try:
-                        inferred_industries = infer_industries(
-                            business_description, 
-                            st.session_state.llm_provider, 
-                            st.session_state.api_key
-                        )
-                        st.session_state.industries = inferred_industries
-                        st.session_state.page = "industry_confirmation"
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error inferring industries: {str(e)}")
+    # Infer industries button
+    if st.button("Proceed with inferred industries"):
+        if not business_description:
+            st.error("Please provide a business description to infer industries.")
+        elif not st.session_state.api_key:
+            st.error("API key is required to infer industries.")
+        else:
+            with st.spinner("Inferring industries based on your description..."):
+                try:
+                    inferred_industries = infer_industries(
+                        business_description, 
+                        st.session_state.llm_provider, 
+                        st.session_state.api_key
+                    )
+                    st.session_state.industries = inferred_industries
+                    st.session_state.page = "industry_confirmation"
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error inferring industries: {str(e)}")
     
     # Upload custom industries
     st.markdown("### Or upload custom industries")
@@ -144,12 +158,24 @@ def industry_confirmation():
     st.title("Confirm Industries")
     st.subheader("Review and edit the industries below")
     
+    # Instructions
+    st.markdown("""
+    ### Instructions:
+    - Review the list of industries below
+    - You can edit industry names by changing the text in each field
+    - Click the "Delete" checkbox to remove an industry
+    - Add new industries using the form at the bottom
+    - When finished, click "Confirm industries and proceed"
+    """)
+    
     industries = st.session_state.industries.copy()
     updated_industries = []
     
+    st.markdown("### Current Industries")
+    
     # Display each industry with options to edit or delete
     for i, industry in enumerate(industries):
-        col1, col2, col3 = st.columns([3, 1, 1])
+        col1, col2 = st.columns([4, 1])
         with col1:
             updated_industry = st.text_input(f"Industry {i+1}", value=industry, key=f"industry_{i}")
         with col2:
@@ -160,23 +186,30 @@ def industry_confirmation():
     
     # Add new industry
     st.markdown("### Add New Industry")
-    new_industry = st.text_input("New Industry")
-    if st.button("Add") and new_industry.strip():
-        updated_industries.append(new_industry)
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        new_industry = st.text_input("New Industry Name")
+    with col2:
+        add_button = st.button("Add Industry")
+    
+    if add_button and new_industry.strip():
+        updated_industries.append(new_industry.strip())
         st.rerun()
     
     # Save updated industries
     st.session_state.industries = updated_industries
     
     # Navigation buttons
+    st.markdown("### Navigation")
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Back to Main Menu"):
+        if st.button("◀️ Back to Main Menu"):
             st.session_state.page = "main_menu"
             st.rerun()
     
     with col2:
-        if st.button("Confirm industries and proceed"):
+        proceed_button = st.button("Confirm industries and proceed ▶️")
+        if proceed_button:
             if not updated_industries:
                 st.error("At least one industry is required.")
             else:
@@ -188,54 +221,74 @@ def website_input():
     st.title("Enter Websites to Classify")
     st.subheader("Add the websites you want to classify")
     
+    # Instructions
+    st.markdown("""
+    ### Instructions:
+    - Enter the URLs of websites you want to classify
+    - Each URL must start with http:// or https://
+    - You can add websites one by one or upload a CSV file
+    - When you're ready, click "Confirm websites and proceed" to start the classification process
+    """)
+    
     websites = st.session_state.websites.copy()
     updated_websites = []
     
-    # Display each website with options to edit or delete
-    for i, website in enumerate(websites):
-        col1, col2, col3 = st.columns([3, 1, 1])
-        with col1:
-            updated_website = st.text_input(f"Website {i+1}", value=website, key=f"website_{i}")
-        with col2:
-            delete = st.checkbox("Delete", key=f"delete_website_{i}")
-        
-        if not delete and updated_website.strip():
-            if validators.url(updated_website):
-                updated_websites.append(updated_website)
-            else:
-                st.warning(f"'{updated_website}' is not a valid URL. It will be ignored.")
+    # Display current websites section
+    if websites:
+        st.markdown("### Current Websites")
+        for i, website in enumerate(websites):
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                updated_website = st.text_input(f"Website {i+1}", value=website, key=f"website_{i}")
+            with col2:
+                delete = st.checkbox("Delete", key=f"delete_website_{i}")
+            
+            if not delete and updated_website.strip():
+                if validators.url(updated_website):
+                    updated_websites.append(updated_website)
+                else:
+                    st.warning(f"'{updated_website}' is not a valid URL. It will be ignored.")
     
     # Add new website
     st.markdown("### Add New Website")
-    col1, col2 = st.columns([3, 1])
+    col1, col2 = st.columns([4, 1])
     with col1:
         new_website = st.text_input("New Website URL", placeholder="https://example.com")
     with col2:
-        if st.button("Add") and new_website.strip():
-            if validators.url(new_website):
-                updated_websites.append(new_website)
-                st.rerun()
-            else:
-                st.error("Please enter a valid URL.")
+        add_button = st.button("Add Website")
+    
+    if add_button and new_website.strip():
+        if validators.url(new_website):
+            updated_websites.append(new_website)
+            st.rerun()
+        else:
+            st.error("Please enter a valid URL (must start with http:// or https://).")
     
     # Upload websites from CSV
-    st.markdown("### Or upload websites from CSV")
-    uploaded_file = st.file_uploader("Upload CSV file with websites (one per line)", type="csv")
+    st.markdown("### Or upload multiple websites from CSV file")
+    st.markdown("CSV should contain one website URL per line")
+    uploaded_file = st.file_uploader("Upload CSV file with website URLs", type="csv")
     
     if uploaded_file is not None:
         try:
             new_websites = parse_csv(uploaded_file)
             valid_websites = []
+            invalid_websites = []
+            
             for url in new_websites:
                 if validators.url(url):
                     valid_websites.append(url)
                 else:
-                    st.warning(f"'{url}' is not a valid URL. It will be ignored.")
+                    invalid_websites.append(url)
             
             if valid_websites:
                 # Merge with existing websites
                 updated_websites.extend([w for w in valid_websites if w not in updated_websites])
-                st.success(f"Added {len(valid_websites)} valid websites from the file.")
+                st.success(f"✅ Added {len(valid_websites)} valid websites from the file.")
+                
+                if invalid_websites:
+                    st.warning(f"⚠️ {len(invalid_websites)} invalid URLs were ignored.")
+                
                 st.rerun()
             else:
                 st.error("No valid websites found in the uploaded file.")
@@ -245,15 +298,21 @@ def website_input():
     # Save updated websites
     st.session_state.websites = updated_websites
     
+    # Show current count
+    if updated_websites:
+        st.info(f"You have added {len(updated_websites)} websites for classification.")
+    
     # Navigation buttons
+    st.markdown("### Navigation")
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Back to Industries"):
+        if st.button("◀️ Back to Industries"):
             st.session_state.page = "industry_confirmation"
             st.rerun()
     
     with col2:
-        if st.button("Confirm websites and proceed"):
+        proceed_button = st.button("Confirm websites and proceed ▶️")
+        if proceed_button:
             if not updated_websites:
                 st.error("At least one website is required.")
             elif not st.session_state.api_key:
@@ -265,24 +324,47 @@ def website_input():
 def processing_page():
     """Process websites and classify them"""
     st.title("Processing Websites")
+    st.subheader("Please wait while we analyze your websites")
+    
+    # Show processing info
+    st.markdown("""
+    ### What's happening now:
+    1. Each website is being scraped to extract its content
+    2. The AI is analyzing the content to determine the most appropriate industry
+    3. Results will be displayed when all websites are processed
+    
+    This may take some time depending on the number of websites and their complexity.
+    """)
     
     if not st.session_state.results:
         results = []
         progress_bar = st.progress(0)
-        status_text = st.empty()
+        status_container = st.container()
+        status_text = status_container.empty()
+        details_expander = st.expander("Show processing details")
         
         total_websites = len(st.session_state.websites)
         
         for i, website in enumerate(st.session_state.websites):
-            progress = (i) / total_websites
+            current_website = i + 1
+            progress = current_website / total_websites if total_websites > 0 else 0
             progress_bar.progress(progress)
-            status_text.text(f"Processing website {i+1} of {total_websites}: {website}")
+            status_text.markdown(f"### Processing website {current_website} of {total_websites}")
+            
+            with details_expander:
+                st.write(f"🔍 Analyzing: {website}")
             
             try:
                 # Scrape the website
+                with details_expander:
+                    st.write("📥 Scraping website content...")
+                
                 content = scrape_website(website)
                 
                 # Classify the website
+                with details_expander:
+                    st.write("🧠 Classifying content with AI...")
+                
                 classification_result = classify_website(
                     website,
                     content,
@@ -293,8 +375,14 @@ def processing_page():
                 
                 results.append(classification_result)
                 
+                with details_expander:
+                    st.write(f"✅ Classification complete: {classification_result['industry']}")
+                
             except Exception as e:
                 # Handle failed scraping
+                with details_expander:
+                    st.write(f"❌ Error: {str(e)}")
+                
                 results.append({
                     "url": website,
                     "industry": "Unknown",
@@ -302,9 +390,13 @@ def processing_page():
                 })
         
         progress_bar.progress(1.0)
-        status_text.text("All websites processed!")
+        status_text.markdown("### 🎉 All websites processed successfully!")
         
         st.session_state.results = results
+        
+        # Add a small delay to show completion message
+        import time
+        time.sleep(1)
     
     # Move to results page
     st.session_state.page = "results"
@@ -313,6 +405,7 @@ def processing_page():
 def results_page():
     """Display classification results"""
     st.title("Classification Results")
+    st.subheader("Website Industry Classification")
     
     if not st.session_state.results:
         st.error("No results to display. Please go back and try again.")
@@ -321,27 +414,84 @@ def results_page():
             st.rerun()
         return
     
+    # Results summary
+    total_sites = len(st.session_state.results)
+    classified_sites = sum(1 for r in st.session_state.results if r["industry"] != "Unknown")
+    unknown_sites = total_sites - classified_sites
+    
+    st.markdown(f"""
+    ### Summary
+    - Total websites analyzed: **{total_sites}**
+    - Successfully classified: **{classified_sites}**
+    - Unable to classify: **{unknown_sites}**
+    """)
+    
+    # Instructions
+    st.markdown("""
+    ### Results Table
+    The table below shows the classification results for each website:
+    - **URL**: The website address
+    - **Industry**: The determined industry category
+    - **Additional Notes**: Extra information about the classification
+    
+    You can sort the table by clicking on column headers.
+    """)
+    
     # Display results in a table
     results_df = pd.DataFrame(st.session_state.results)
     st.dataframe(results_df, hide_index=True, use_container_width=True)
     
+    # Download section
+    st.markdown("### Export Results")
+    st.markdown("Download the classification results as a CSV file for your records.")
+    
     # Download button
     csv = export_to_csv(st.session_state.results)
-    st.download_button(
-        label="Download Results as CSV",
-        data=csv,
-        file_name="website_classification_results.csv",
-        mime="text/csv",
-    )
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.download_button(
+            label="📥 Download Results as CSV",
+            data=csv,
+            file_name="website_classification_results.csv",
+            mime="text/csv",
+            help="Download a CSV file with all classification results",
+            use_container_width=True
+        )
     
     # Navigation
-    if st.button("Start New Classification"):
-        # Reset necessary state
-        st.session_state.page = "main_menu"
-        st.session_state.industries = []
-        st.session_state.websites = []
-        st.session_state.results = []
-        st.rerun()
+    st.markdown("### What's Next?")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("Start a new classification with different websites or industries:")
+        if st.button("🔄 Start New Classification", use_container_width=True):
+            # Reset necessary state
+            st.session_state.page = "main_menu"
+            st.session_state.industries = []
+            st.session_state.websites = []
+            st.session_state.results = []
+            st.rerun()
+    
+    with col2:
+        st.markdown("View detailed information about the project:")
+        if st.button("ℹ️ About Leads and Logic", use_container_width=True):
+            st.markdown("""
+            ### About Leads and Logic
+            
+            The Leads and Logic app helps businesses categorize websites into relevant industries, 
+            which can assist with lead generation, competitive analysis, and market research.
+            
+            **Features:**
+            - Customizable industry categories
+            - AI-powered website classification
+            - Bulk processing via CSV upload
+            - Exportable results
+            
+            For more information, visit [Leads and Logic Community](https://leadslogic.slack.com/)
+            """)
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("Thank you for using Leads and Logic. We hope this tool helps your business grow!")
 
 # Main app flow
 if st.session_state.show_license:
