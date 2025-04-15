@@ -153,6 +153,13 @@ def main_menu():
         except Exception as e:
             st.error(f"Error parsing uploaded file: {str(e)}")
 
+    st.markdown("""
+    ### Notes & Tips:
+    1. It is sometimes difficult to get the right API key. If you are having trouble, please contact us on the [Leads and Logic Community](https://leadslogic.slack.com/) for assistance.
+    2.  If you choose to infer industries, please provide as much detail as possible to support accurate and meaningful inferences. This may include a description of the products or services offered, examples of past or current customers, business goals, available capacity and resources, and any other relevant context. The more comprehensive the information, the better we can tailor results to your specific needs.
+    3.  If you choose to upload custom industries, ensure that the CSV file contains one industry per line. The file should be plain text with no headers or additional formatting.
+    """)
+
 
 def industry_confirmation():
     """Display the industry confirmation page"""
