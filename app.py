@@ -619,22 +619,9 @@ def results_page():
             st.rerun()
 
     with col2:
-        st.markdown("View detailed information about the project:")
-        if st.button("ℹ️ About Leads and Logic", use_container_width=True):
-            st.markdown("""
-            ### About Leads and Logic
-            
-            The Leads and Logic app helps businesses categorise websites into relevant industries, 
-            which can assist with lead generation, competitive analysis, and market research.
-            
-            **Features:**
-            - Customisable industry categories
-            - AI-powered website classification
-            - Bulk processing via CSV upload
-            - Exportable results
-            
-            For more information, visit [Leads and Logic Community](https://leadslogic.slack.com/)
-            """)
+        st.markdown(
+            "App by [Leads and Logic Community](https://leadslogic.slack.com/)"
+        )
 
     # Footer
     st.markdown("---")
