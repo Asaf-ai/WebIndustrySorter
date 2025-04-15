@@ -1,0 +1,55 @@
+I want an app using python
+This app will help people classify websites into industries.
+
+When loaded a Licensing Agreement popup will show.
+The popup should hover over the main app page.
+The popup will include the following text:
+"Leads and Logic App - Licensing Agreement
+Effective Date: April 5th, 2025
+By using the Leads and Logic app ("App"), you agree to the following terms:
+License: The App is provided for free and can be used commercially or otherwise, at your own risk. You are responsible for any consequences arising from your use of the App.
+Data Retention: The Leads and Logic community does not store or retain any data or files submitted through the App. You are responsible for the security of your data.
+API Key: The App requires an API key from an external LLM provider. You must obtain this key privately and keep it confidential. Do not share it with others.
+Restrictions: You cannot reverse-engineer, redistribute, or misuse the App. Keep your API key secure and do not use the App in a way that harms its functionality or others.
+No Warranty: The App is provided "as is," without any warranties or guarantees. We are not responsible for any issues arising from your use of the App.
+Liability: The Provider is not liable for any damages, including data loss or interruptions, related to your use of the App.
+Modifications: We may modify or discontinue the App at any time without notice.
+
+By using the App, you accept these terms.
+Leads and Logic Community
+"
+The "Leads and Logic Community" text at the bottom of the Licensing Agreement should be a link to the following address: https://leadslogic.slack.com/
+
+The app main menu will have:
+1 - A dropdown input with the main LLM providers
+2 - An input box for an API key
+3 - A button : Proceed with default industries
+4 - An upload box for custom industries CSV file
+5 - An input text box, which allows the user to describe the business which the classification is done for. It will encourage the user to detail the products or services rendered, example of past or current customers, business goals, capacity and resources, and any other relevant information the user can offer. Next to the input box, there is a button : Proceed with inferred industries.
+
+The industry classes confirmation page will have:
+Once button was pressed or a CSV file has been uploaded, we move to a new page. 
+This page lists the industries. All industries can be renamed or deleted. 
+The user can also add more, non empty, records as they please.
+If the button "Proceed with default industries" was pressed to lead to this page, list the following industries:
+Technology & Software, E-commerce & Retail, Finance & FinTech, Healthcare & Life Sciences, Education & Training, Marketing & Advertising, Consulting & Professional, Services, Media & Content, Real Estate, Travel, Hospitality & Events, Manufacturing & Industrial, Non-Profit & Government, Other / Miscellaneous.
+If a CSV file was uploaded, show the industries listed in the file.
+If the button "Proceed with inferred industries" was pressed to lead to this page, use a LLM to infer which might be the relevant industries for that business and display these.
+In the bottom of the page place a button in the middle which says "Confirm industries and proceed".
+
+The websites to classify page:
+Once the industries have been confirmed, the user needs to select which websites are required to be classified to these industries.
+This page lists the websites. All websites can be renamed or deleted. The user can also add more, non empty, websites as they please.
+The user can also upload a CSV file with URLs. If the user chooses to do so, display the uploaded file records so the user can edit, add or remove, these.
+In the bottom of the page place a button in the middle which says "Confirm websites and proceed".
+
+Once the "Confirm websites and proceed" button has been pressed, the app needs to scrape each website in the websites to classify page. Make sure that this scraping can deal with hard to scrape websites and that there is enough information to classify its' industry.
+For each website scraped, use a llm to classify it to the list of industry classes confirmed by the user. Make sure that the LLM can write "Additional Notes" on the classification if required (for sub-group of any other relevant information).
+If a website doesn’t clearly fit any category, it is classified as "Other/Miscellaneous"
+If a scraping failed, note it as "Unknown" and note in the !Additional Notes! that the website scraping failed.
+Once all this is done, move to the results page.
+
+The results page:
+In this page show all the websites required to classify, their classes, and the Additional Notes.
+Make sure these are easy to see and browse. 
+Add a download results button which will allow the user to download the results of the classification.
