@@ -159,61 +159,114 @@ def industry_confirmation():
     st.subheader("Review and edit the industries below")
     
     # Instructions
-    st.markdown("""
-    ### Instructions:
+    st.info("""
+    **Instructions:**
     - Review the list of industries below
     - You can edit industry names by changing the text in each field
-    - Click the "Delete" checkbox to remove an industry
+    - Click the "Delete" button to remove an industry
     - Add new industries using the form at the bottom
     - When finished, click "Confirm industries and proceed"
     """)
     
+    # Get the current industries and prepare a container for updated ones
     industries = st.session_state.industries.copy()
+    
+    # Use session state to keep track of deleted industries
+    if "deleted_industries" not in st.session_state:
+        st.session_state.deleted_industries = [False] * len(industries)
+    
+    # If the number of industries has changed, reset the deleted_industries array
+    if len(st.session_state.deleted_industries) != len(industries):
+        st.session_state.deleted_industries = [False] * len(industries)
+    
     updated_industries = []
     
-    st.markdown("### Current Industries")
-    
-    # Display each industry with options to edit or delete
-    for i, industry in enumerate(industries):
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            updated_industry = st.text_input(f"Industry {i+1}", value=industry, key=f"industry_{i}")
-        with col2:
-            delete = st.checkbox("Delete", key=f"delete_{i}")
+    # Add a container for better styling
+    with st.container():
+        st.markdown("### Current Industries")
         
-        if not delete and updated_industry.strip():
-            updated_industries.append(updated_industry)
+        # Display warning if no industries
+        if not industries:
+            st.warning("No industries have been added yet. Add some industries below.")
+        
+        # Use a card-like styling for each industry
+        for i, industry in enumerate(industries):
+            if not st.session_state.deleted_industries[i]:
+                with st.container():
+                    # Add a slight visual separation between items
+                    if i > 0:
+                        st.markdown("<hr style='margin: 5px 0; opacity: 0.3;'>", unsafe_allow_html=True)
+                    
+                    col1, col2, col3 = st.columns([8, 3, 2])
+                    
+                    with col1:
+                        updated_industry = st.text_input(
+                            label=f"Industry {i+1}",
+                            value=industry,
+                            key=f"industry_{i}",
+                            placeholder="Enter industry name"
+                        )
+                    
+                    with col3:
+                        # Use a button instead of a checkbox for immediate feedback
+                        if st.button("🗑️ Delete", key=f"delete_btn_{i}"):
+                            st.session_state.deleted_industries[i] = True
+                            st.rerun()
+                    
+                    if updated_industry.strip():
+                        updated_industries.append(updated_industry.strip())
     
-    # Add new industry
+    # Add new industry in a visually distinct section
+    st.markdown("---")
     st.markdown("### Add New Industry")
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        new_industry = st.text_input("New Industry Name")
-    with col2:
-        add_button = st.button("Add Industry")
     
-    if add_button and new_industry.strip():
-        updated_industries.append(new_industry.strip())
-        st.rerun()
+    with st.container():
+        col1, col2 = st.columns([4, 1])
+        
+        with col1:
+            new_industry = st.text_input(
+                "New Industry Name",
+                key="new_industry_input",
+                placeholder="E.g., Technology, Healthcare, Finance, etc."
+            )
+        
+        with col2:
+            add_button = st.button("➕ Add Industry", type="primary")
+        
+        if add_button:
+            if not new_industry.strip():
+                st.error("Please enter an industry name.")
+            else:
+                industries.append(new_industry.strip())
+                st.session_state.deleted_industries.append(False)
+                st.session_state.industries = industries
+                st.rerun()
+    
+    # Show count of industries
+    if updated_industries:
+        st.success(f"You have {len(updated_industries)} industries ready for classification.")
     
     # Save updated industries
     st.session_state.industries = updated_industries
     
-    # Navigation buttons
+    # Navigation buttons in a fixed footer
+    st.markdown("---")
     st.markdown("### Navigation")
+    
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("◀️ Back to Main Menu"):
+        if st.button("◀️ Back to Main Menu", use_container_width=True):
             st.session_state.page = "main_menu"
             st.rerun()
     
     with col2:
-        proceed_button = st.button("Confirm industries and proceed ▶️")
+        proceed_button = st.button("Confirm industries and proceed ▶️", type="primary", use_container_width=True)
         if proceed_button:
             if not updated_industries:
                 st.error("At least one industry is required.")
             else:
                 st.session_state.page = "website_input"
+                st.session_state.deleted_industries = [] # Reset the delete tracker
                 st.rerun()
 
 def website_input():
@@ -222,96 +275,151 @@ def website_input():
     st.subheader("Add the websites you want to classify")
     
     # Instructions
-    st.markdown("""
-    ### Instructions:
+    st.info("""
+    **Instructions:**
     - Enter the URLs of websites you want to classify
     - Each URL must start with http:// or https://
     - You can add websites one by one or upload a CSV file
     - When you're ready, click "Confirm websites and proceed" to start the classification process
     """)
     
+    # Get the current websites and prepare a container for updated ones
     websites = st.session_state.websites.copy()
+    
+    # Use session state to keep track of deleted websites
+    if "deleted_websites" not in st.session_state:
+        st.session_state.deleted_websites = [False] * len(websites)
+    
+    # If the number of websites has changed, reset the deleted_websites array
+    if len(st.session_state.deleted_websites) != len(websites):
+        st.session_state.deleted_websites = [False] * len(websites)
+    
     updated_websites = []
     
     # Display current websites section
-    if websites:
+    with st.container():
         st.markdown("### Current Websites")
-        for i, website in enumerate(websites):
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                updated_website = st.text_input(f"Website {i+1}", value=website, key=f"website_{i}")
-            with col2:
-                delete = st.checkbox("Delete", key=f"delete_website_{i}")
+        
+        # Display warning if no websites
+        if not websites:
+            st.warning("No websites have been added yet. Add a website below.")
             
-            if not delete and updated_website.strip():
-                if validators.url(updated_website):
-                    updated_websites.append(updated_website)
-                else:
-                    st.warning(f"'{updated_website}' is not a valid URL. It will be ignored.")
+        # Use a clean list style for each website
+        for i, website in enumerate(websites):
+            if not st.session_state.deleted_websites[i]:
+                with st.container():
+                    # Add a slight visual separation between items
+                    if i > 0:
+                        st.markdown("<hr style='margin: 5px 0; opacity: 0.3;'>", unsafe_allow_html=True)
+                    
+                    col1, col2 = st.columns([4, 1])
+                    
+                    with col1:
+                        updated_website = st.text_input(
+                            label=f"Website {i+1}",
+                            value=website,
+                            key=f"website_{i}",
+                            placeholder="https://example.com"
+                        )
+                    
+                    with col2:
+                        # Use a button instead of a checkbox for immediate feedback
+                        if st.button("🗑️ Delete", key=f"delete_website_btn_{i}"):
+                            st.session_state.deleted_websites[i] = True
+                            st.rerun()
+                    
+                    # Validate the URL
+                    if updated_website.strip():
+                        if validators.url(updated_website):
+                            updated_websites.append(updated_website)
+                        else:
+                            st.warning(f"'{updated_website}' is not a valid URL. Please include http:// or https://.")
     
-    # Add new website
+    # Add new website in a visually distinct section
+    st.markdown("---")
     st.markdown("### Add New Website")
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        new_website = st.text_input("New Website URL", placeholder="https://example.com")
-    with col2:
-        add_button = st.button("Add Website")
     
-    if add_button and new_website.strip():
-        if validators.url(new_website):
-            updated_websites.append(new_website)
-            st.rerun()
-        else:
-            st.error("Please enter a valid URL (must start with http:// or https://).")
+    with st.container():
+        col1, col2 = st.columns([4, 1])
+        
+        with col1:
+            new_website = st.text_input(
+                "New Website URL",
+                key="new_website_input",
+                placeholder="https://example.com"
+            )
+        
+        with col2:
+            add_button = st.button("➕ Add Website", type="primary")
+        
+        if add_button:
+            if not new_website.strip():
+                st.error("Please enter a website URL.")
+            elif not validators.url(new_website):
+                st.error("Please enter a valid URL (must start with http:// or https://).")
+            else:
+                websites.append(new_website)
+                st.session_state.deleted_websites.append(False)
+                st.session_state.websites = websites
+                st.rerun()
     
     # Upload websites from CSV
     st.markdown("### Or upload multiple websites from CSV file")
-    st.markdown("CSV should contain one website URL per line")
-    uploaded_file = st.file_uploader("Upload CSV file with website URLs", type="csv")
     
-    if uploaded_file is not None:
-        try:
-            new_websites = parse_csv(uploaded_file)
-            valid_websites = []
-            invalid_websites = []
-            
-            for url in new_websites:
-                if validators.url(url):
-                    valid_websites.append(url)
+    with st.container():
+        st.markdown("CSV should contain one website URL per line")
+        uploaded_file = st.file_uploader("Upload CSV file with website URLs", type="csv")
+        
+        if uploaded_file is not None:
+            try:
+                new_websites = parse_csv(uploaded_file)
+                valid_websites = []
+                invalid_websites = []
+                
+                for url in new_websites:
+                    if validators.url(url):
+                        valid_websites.append(url)
+                    else:
+                        invalid_websites.append(url)
+                
+                if valid_websites:
+                    # Add valid websites to the existing list
+                    for url in valid_websites:
+                        if url not in websites:
+                            websites.append(url)
+                            st.session_state.deleted_websites.append(False)
+                    
+                    st.session_state.websites = websites
+                    st.success(f"✅ Added {len(valid_websites)} valid websites from the file.")
+                    
+                    if invalid_websites:
+                        st.warning(f"⚠️ {len(invalid_websites)} invalid URLs were ignored.")
+                    
+                    st.rerun()
                 else:
-                    invalid_websites.append(url)
-            
-            if valid_websites:
-                # Merge with existing websites
-                updated_websites.extend([w for w in valid_websites if w not in updated_websites])
-                st.success(f"✅ Added {len(valid_websites)} valid websites from the file.")
-                
-                if invalid_websites:
-                    st.warning(f"⚠️ {len(invalid_websites)} invalid URLs were ignored.")
-                
-                st.rerun()
-            else:
-                st.error("No valid websites found in the uploaded file.")
-        except Exception as e:
-            st.error(f"Error parsing uploaded file: {str(e)}")
+                    st.error("No valid websites found in the uploaded file.")
+            except Exception as e:
+                st.error(f"Error parsing uploaded file: {str(e)}")
     
     # Save updated websites
     st.session_state.websites = updated_websites
     
     # Show current count
     if updated_websites:
-        st.info(f"You have added {len(updated_websites)} websites for classification.")
+        st.success(f"You have {len(updated_websites)} websites ready for classification.")
     
-    # Navigation buttons
+    # Navigation buttons in a fixed footer
+    st.markdown("---")
     st.markdown("### Navigation")
+    
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("◀️ Back to Industries"):
+        if st.button("◀️ Back to Industries", use_container_width=True):
             st.session_state.page = "industry_confirmation"
             st.rerun()
     
     with col2:
-        proceed_button = st.button("Confirm websites and proceed ▶️")
+        proceed_button = st.button("Confirm websites and proceed ▶️", type="primary", use_container_width=True)
         if proceed_button:
             if not updated_websites:
                 st.error("At least one website is required.")
@@ -319,6 +427,7 @@ def website_input():
                 st.error("API key is required for classification.")
             else:
                 st.session_state.page = "processing"
+                st.session_state.deleted_websites = [] # Reset the delete tracker
                 st.rerun()
 
 def processing_page():
