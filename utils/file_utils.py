@@ -16,31 +16,53 @@ def parse_csv(uploaded_file):
         # Reset file pointer
         uploaded_file.seek(0)
         
-        # Try pandas first
-        try:
-            df = pd.read_csv(uploaded_file)
-            if len(df.columns) == 1:
-                # Single column CSV
-                items = df.iloc[:, 0].dropna().astype(str).tolist()
-            else:
-                # Multiple columns - use first column
-                items = df.iloc[:, 0].dropna().astype(str).tolist()
+        # Read the content as text
+        content = uploaded_file.read().decode('utf-8')
+        
+        # Remove BOM character if present
+        if content.startswith('\ufeff'):
+            content = content.replace('\ufeff', '')
+            
+        # Simple parsing for robustness - split by newlines
+        lines = content.split('\n')
+        items = []
+        
+        for line in lines:
+            # Skip empty lines
+            if not line.strip():
+                continue
                 
-        except Exception:
-            # Fallback to csv module
-            uploaded_file.seek(0)
-            content = uploaded_file.read().decode('utf-8')
-            csv_reader = csv.reader(io.StringIO(content))
-            items = []
-            for row in csv_reader:
-                if row and row[0].strip():
-                    items.append(row[0].strip())
+            # Handle CSV with or without quotes
+            if ',' in line:
+                # If it's a comma-separated line, take the first item
+                parts = line.split(',')
+                item = parts[0].strip()
+                
+                # Remove quotes if present
+                if item.startswith('"') and item.endswith('"'):
+                    item = item[1:-1]
+                elif item.startswith("'") and item.endswith("'"):
+                    item = item[1:-1]
+                    
+                if item:
+                    items.append(item)
+            else:
+                # Simple line with just one item
+                item = line.strip()
+                if item:
+                    items.append(item)
         
-        # Remove duplicates and empty strings
-        items = [item for item in items if item.strip()]
-        items = list(dict.fromkeys(items))  # Remove duplicates while preserving order
+        # Remove duplicates while preserving order
+        unique_items = []
+        seen = set()
         
-        return items
+        for item in items:
+            if item not in seen:
+                seen.add(item)
+                unique_items.append(item)
+        
+        return unique_items
+        
     except Exception as e:
         raise Exception(f"Error parsing CSV: {str(e)}")
 

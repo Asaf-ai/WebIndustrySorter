@@ -385,46 +385,86 @@ def website_input():
 
     # Upload websites from CSV
     st.markdown("### Or upload multiple websites from CSV file")
-
+    
     with st.container():
-        st.markdown("CSV should contain one website URL per line")
-        uploaded_file = st.file_uploader("Upload CSV file with website URLs",
-                                         type="csv")
-
-        if uploaded_file is not None:
-            try:
-                new_websites = parse_csv(uploaded_file)
-                valid_websites = []
-                invalid_websites = []
-
-                for url in new_websites:
-                    if validators.url(url):
-                        valid_websites.append(url)
+        st.markdown("""
+        CSV file should:
+        - Contain one website URL per line
+        - URLs must start with http:// or https://
+        - Can be a plain text file with .csv extension
+        """)
+        
+        csv_col1, csv_col2 = st.columns([3, 1])
+        
+        with csv_col1:
+            uploaded_file = st.file_uploader("Upload CSV file with website URLs", type=["csv", "txt"])
+        
+        with csv_col2:
+            if uploaded_file is not None:
+                process_csv = st.button("Process CSV", type="primary")
+            else:
+                process_csv = False
+        
+        if uploaded_file is not None and process_csv:
+            # Create a spinner to show processing
+            with st.spinner("Processing CSV file..."):
+                try:
+                    # Parse the CSV file
+                    new_websites = parse_csv(uploaded_file)
+                    
+                    if not new_websites:
+                        st.error("The uploaded file appears to be empty.")
                     else:
-                        invalid_websites.append(url)
-
-                if valid_websites:
-                    # Add valid websites to the existing list
-                    for url in valid_websites:
-                        if url not in websites:
-                            websites.append(url)
-                            st.session_state.deleted_websites.append(False)
-
-                    st.session_state.websites = websites
-                    st.success(
-                        f"✅ Added {len(valid_websites)} valid websites from the file."
-                    )
-
-                    if invalid_websites:
-                        st.warning(
-                            f"⚠️ {len(invalid_websites)} invalid URLs were ignored."
-                        )
-
-                    st.rerun()
-                else:
-                    st.error("No valid websites found in the uploaded file.")
-            except Exception as e:
-                st.error(f"Error parsing uploaded file: {str(e)}")
+                        # Show the parsed content in an expander
+                        with st.expander("CSV File Contents"):
+                            st.write(f"Found {len(new_websites)} entries in the CSV file:")
+                            for i, entry in enumerate(new_websites):
+                                st.text(f"{i+1}. {entry}")
+                        
+                        # Validate URLs
+                        valid_websites = []
+                        invalid_websites = []
+                        
+                        for url in new_websites:
+                            # Add http:// prefix if missing
+                            if url and not url.startswith(('http://', 'https://')):
+                                url = 'https://' + url
+                                
+                            if validators.url(url):
+                                valid_websites.append(url)
+                            else:
+                                invalid_websites.append(url)
+                        
+                        if valid_websites:
+                            # Add valid websites to the existing list
+                            for url in valid_websites:
+                                if url not in websites:
+                                    websites.append(url)
+                                    st.session_state.deleted_websites.append(False)
+                            
+                            st.session_state.websites = websites
+                            st.success(f"✅ Successfully added {len(valid_websites)} valid websites from the file.")
+                            
+                            if invalid_websites:
+                                with st.expander(f"⚠️ {len(invalid_websites)} invalid URLs were ignored"):
+                                    for i, url in enumerate(invalid_websites):
+                                        st.text(f"{i+1}. {url}")
+                            
+                            # Wait a moment before rerunning to show the success message
+                            import time
+                            time.sleep(1.5)
+                            st.rerun()
+                        else:
+                            st.error("No valid website URLs found in the uploaded file.")
+                except Exception as e:
+                    st.error(f"Error processing the file: {str(e)}")
+                    st.info("Please ensure your CSV file contains valid website URLs, one per line.")
+                    
+        # Example CSV format
+        with st.expander("Show example CSV format"):
+            st.code("""https://example.com
+https://google.com
+https://microsoft.com""", language="text")
 
     # Save updated websites
     st.session_state.websites = updated_websites
